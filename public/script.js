@@ -61,6 +61,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('register-form').addEventListener('submit', handleRegister);
     
+    // User dropdown toggle - use event delegation to ensure it works even if element is shown/hidden
+    document.addEventListener('click', (e) => {
+        const userAvatarBtn = document.getElementById('user-avatar-btn');
+        if (userAvatarBtn && (userAvatarBtn === e.target || userAvatarBtn.contains(e.target))) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleUserDropdown(e);
+        }
+    });
+    
     // Close modals/dropdowns on outside click
     window.onclick = (event) => {
         if (event.target.classList.contains('modal')) {
@@ -71,6 +81,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!els.modelSelector.contains(event.target)) {
             els.modelList.classList.remove('active');
             els.modelTrigger.classList.remove('active');
+        }
+
+        // Close user dropdown if clicking outside
+        const userDropdown = document.getElementById('user-dropdown');
+        const userBtn = document.getElementById('user-avatar-btn');
+        const userContainer = document.getElementById('user-info');
+        if (userDropdown && userDropdown.classList.contains('active')) {
+            if (userContainer && !userContainer.contains(event.target)) {
+                userDropdown.classList.remove('active');
+            }
         }
     };
 
@@ -178,19 +198,55 @@ async function checkAuthAndRestore() {
 }
 
 function updateAuthUI() {
-    if (!els.authButtons || !els.userInfo || !els.newBtn) return;
+    // Note: old #user-info is now .user-menu-container with id #user-info
+    const userContainer = document.getElementById('user-info'); 
+    
+    if (!els.authButtons || !userContainer || !els.newBtn) return;
     
     if (currentUser) {
         els.authButtons.style.display = 'none';
-        els.userInfo.style.display = 'flex';
+        userContainer.style.display = 'flex'; // Was 'flex', ensuring it's visible
         els.newBtn.style.display = 'flex';
+        
         if (els.usernameDisplay) els.usernameDisplay.textContent = currentUser.user.username;
+        
+        // Set initials
+        const initials = document.getElementById('user-initials');
+        if (initials) {
+            initials.textContent = currentUser.user.username.charAt(0).toUpperCase();
+        }
+
         closeModal('login-modal');
         closeModal('register-modal');
+        
+        // Ensure dropdown is closed when showing user menu
+        const dropdown = document.getElementById('user-dropdown');
+        if (dropdown) {
+            dropdown.classList.remove('active');
+        }
     } else {
         els.authButtons.style.display = 'flex';
-        els.userInfo.style.display = 'none';
+        userContainer.style.display = 'none';
         els.newBtn.style.display = 'none';
+    }
+}
+
+function toggleUserDropdown(event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    const dropdown = document.getElementById('user-dropdown');
+    const button = document.getElementById('user-avatar-btn');
+    if (dropdown && button) {
+        const isActive = dropdown.classList.contains('active');
+        dropdown.classList.toggle('active');
+        
+        if (!isActive) {
+            // Position dropdown relative to button when opening
+            const rect = button.getBoundingClientRect();
+            dropdown.style.top = `${rect.bottom + 8}px`;
+            dropdown.style.right = `${window.innerWidth - rect.right}px`;
+        }
     }
 }
 
@@ -638,7 +694,13 @@ function updatePreviewUI(model, renderIframe = true) {
     // Only update preview if we have content and we are not just starting
     // If we have partial content, we try to render.
     // Error protection: If it's empty, show placeholder or nothing.
-    if (!data.html && !data.css && !data.js) return;
+    if (!data.html && !data.css && !data.js) {
+        // If data is empty but we are asked to render (e.g. switching tabs to an empty one), we should clear the iframe
+        if (renderIframe) {
+            els.previewFrame.srcdoc = '';
+        }
+        return;
+    }
 
     // Console injection script
     const consoleScript = `
@@ -734,6 +796,17 @@ function setDevice(device) {
     wrapper.classList.toggle('mobile', device === 'mobile');
     wrapper.classList.toggle('desktop', device === 'desktop');
     
+    // Toggle aspect ratio on container
+    const container = document.querySelector('.preview-container');
+    if (device === 'mobile') {
+        container.classList.remove('aspect-16-9');
+    } else {
+        // Restore aspect ratio if in preview view
+        if (activeView === 'preview') {
+            container.classList.add('aspect-16-9');
+        }
+    }
+    
     document.querySelectorAll('.device-btn').forEach(b => {
         if (device === 'mobile' && b.title === 'Mobile') b.classList.add('active');
         else if (device === 'desktop' && b.title === 'Desktop') b.classList.add('active');
@@ -789,6 +862,7 @@ window.switchView = switchView;
 window.setDevice = setDevice;
 window.logout = logout;
 window.toggleModelSelection = toggleModelSelection;
+window.toggleUserDropdown = toggleUserDropdown;
 window.clearConsole = clearConsole;
 window.rerunPreview = rerunPreview;
 

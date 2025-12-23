@@ -18,7 +18,7 @@
             <span>MultiForge</span>
         </div>
         <div class="header-controls">
-             <button id="new-btn" class="icon-btn" title="New Project" style="display: none;">
+             <button id="new-btn" class="icon-btn" title="New Project" style="display: none; margin-right: 1rem;">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -27,9 +27,24 @@
                 <button class="auth-btn" onclick="openModal('login-modal')">Login</button>
                 <button class="auth-btn" onclick="openModal('register-modal')">Register</button>
             </div>
-            <div class="user-info" id="user-info" style="display: none;">
-                <span id="username-display"></span>
-                <button class="auth-btn" onclick="logout()">Logout</button>
+            
+            <div class="user-menu-container" id="user-info" style="display: none;">
+                <button class="user-avatar-btn" id="user-avatar-btn" type="button">
+                    <span id="user-initials">U</span>
+                </button>
+                <div class="user-dropdown" id="user-dropdown">
+                    <div class="user-dropdown-header">
+                        <span id="username-display">Username</span>
+                    </div>
+                    <button class="user-dropdown-item" onclick="logout()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Logout
+                    </button>
+                </div>
             </div>
         </div>
     </header>

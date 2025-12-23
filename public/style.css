@@ -34,6 +34,9 @@ header {
     border-bottom: 1px solid var(--border);
     backdrop-filter: blur(10px);
     flex-shrink: 0;
+    position: relative;
+    z-index: 100;
+    overflow: visible;
 }
 
 .logo {
@@ -43,6 +46,7 @@ header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-right: 1rem; /* Added gap to logo as well just in case */
 }
 
 .logo svg {
@@ -53,6 +57,14 @@ header {
     display: flex;
     align-items: center;
     gap: 1rem;
+    overflow-x: auto;
+    max-width: 100%;
+    /* Hide scrollbar for cleaner look, but allow functionality */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+.header-controls::-webkit-scrollbar {
+    display: none;
 }
 
 .auth-buttons {
@@ -92,6 +104,90 @@ header {
 .icon-btn:hover {
     background: var(--primary);
     color: var(--bg);
+}
+
+/* User Menu & Dropdown */
+.user-menu-container {
+    position: relative;
+    display: none; /* Toggled via JS */
+    z-index: 10001; /* Ensure it's above other header elements */
+    overflow: visible;
+}
+
+.user-avatar-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--panel-bg);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.2s;
+    padding: 0;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1002;
+}
+
+.user-avatar-btn:hover {
+    background: var(--primary);
+    color: var(--bg);
+}
+
+.user-dropdown {
+    position: fixed;
+    width: 200px;
+    min-width: 200px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    display: none;
+    z-index: 10000;
+    overflow: hidden;
+    flex-direction: column;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.user-menu-container .user-dropdown.active {
+    display: flex;
+    visibility: visible;
+    opacity: 1;
+    animation: fadeIn 0.2s ease;
+}
+
+.user-dropdown-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(0,0,0,0.1);
+}
+
+.user-dropdown-item {
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    color: var(--fg);
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+    width: 100%;
+}
+
+.user-dropdown-item:hover {
+    background: var(--selection);
+    color: var(--primary);
 }
 
 /* Allow main to scroll if content overflows, but generally we want flex expansion */
@@ -310,7 +406,13 @@ button#submit-btn:disabled {
 }
 
 .preview-container.aspect-16-9 {
+    /* aspect-ratio: 16 / 9; Removed from container to allow header to sit on top of 16:9 content */
+    aspect-ratio: auto;
+}
+
+.preview-container.aspect-16-9 .preview-content {
     aspect-ratio: 16 / 9;
+    flex: 0 0 auto; /* Stop flexing, respect aspect ratio */
 }
 
 .preview-header {
@@ -420,7 +522,7 @@ button#submit-btn:disabled {
 iframe#preview-frame {
     background: #1a1a1a;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    transition: all 0.3s ease;
+    transition: border-radius 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
     border: none;
     outline: none;
     width: 100%;
@@ -433,16 +535,22 @@ iframe#preview-frame {
     align-items: center;
     padding: 2rem;
     flex: 1; /* Mobile can fill space */
+    width: 100%;
+    overflow: hidden; /* Prevent scrolling within content area, let main scroll if needed */
 }
 
 .preview-content.mobile iframe#preview-frame {
-    width: 22%; /* Smaller: 22% of container width */
+    width: calc(85vh * 375 / 667);
+    height: 85vh;
     aspect-ratio: 375 / 667; /* Maintain aspect ratio */
+    max-width: 100%;
+    
     flex-shrink: 0;
-    border-radius: 37px; /* Slightly smaller to prevent white pixels */
-    border: 5px solid #1a1a1a; /* Thinner border to prevent overflow */
+    border-radius: 40px; 
+    border: 14px solid #1a1a1a; 
     display: block;
     box-sizing: border-box;
+    box-shadow: 0 0 0 2px #333; /* Outer ring for visual wrapping */
 }
 
 .preview-content.desktop {
@@ -458,7 +566,7 @@ iframe#preview-frame {
     width: 100%;
     height: 100%;
     border-radius: 0;
-    border: 12px solid #333;
+    border: none;
     box-sizing: border-box;
     display: block;
 }
@@ -487,7 +595,7 @@ iframe#preview-frame {
     font-family: var(--font-mono);
     font-size: 0.9rem;
     /* Prism sets shadows/etc sometimes, ensure clean */
-    text-shadow: none !important;
+    text-shadow: none;
 }
 
 .code-view.active {
@@ -553,11 +661,10 @@ iframe#preview-frame {
 
 /* User Info Styling */
 .user-info {
+    /* Styles now handled by .user-menu-container mostly, but keeping for legacy references if any */
     display: flex;
     align-items: center;
     gap: 1rem;
-    color: var(--fg);
-    font-weight: 500;
 }
 
 #username-display {
@@ -681,4 +788,71 @@ iframe#preview-frame {
 }
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .logo {
+        font-size: 1.2rem;
+    }
+
+    main {
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .prompt-box {
+        padding: 1rem;
+    }
+
+    .prompt-controls {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+    }
+
+    .model-selector {
+        width: 100%;
+        min-width: 0;
+    }
+    
+    .model-dropdown {
+        width: 100%;
+    }
+    
+    button#submit-btn {
+        width: 100%;
+    }
+
+    /* Stack preview header controls if needed */
+    .preview-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .view-tabs {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+    }
+    
+    .preview-controls-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    /* Mobile Preview Adjustments */
+    .preview-content.mobile {
+        padding: 1rem;
+    }
+
+    .preview-content.mobile iframe#preview-frame {
+        height: 65vh; /* Reduce height on mobile to fit screen */
+        width: calc(65vh * 375 / 667);
+    }
 }
