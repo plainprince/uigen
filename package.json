@@ -1,0 +1,15 @@
+{
+  "name": "multiforge",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun src/index.js",
+    "dev": "bun --watch src/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@google/generative-ai": "^0.24.1",
+    "express": "^4.21.2",
+    "openai": "^6.15.0"
+  }
+}

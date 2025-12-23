@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiForge - Generate UI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>MultiForge</span>
+        </div>
+        <div class="header-controls">
+             <button id="new-btn" class="icon-btn" title="New Project" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="auth-buttons" id="auth-buttons">
+                <button class="auth-btn" onclick="openModal('login-modal')">Login</button>
+                <button class="auth-btn" onclick="openModal('register-modal')">Register</button>
+            </div>
+            <div class="user-info" id="user-info" style="display: none;">
+                <span id="username-display"></span>
+                <button class="auth-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="prompt-container">
+            <div class="prompt-box">
+                <textarea id="prompt" placeholder="Build anything..."></textarea>
+                <div class="prompt-controls">
+                    <div class="model-selector" id="model-selector">
+                        <div class="model-trigger" onclick="toggleModelDropdown()">
+                            <span>Select Models</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </div>
+                        <div class="model-dropdown" id="model-list">
+                            <!-- Models injected via JS -->
+                        </div>
+                    </div>
+                    <button id="submit-btn" title="Generate">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="response-area" id="response-area">
+            <div class="model-tabs" id="model-tabs">
+                <!-- Tabs for different model responses -->
+            </div>
+
+            <div class="preview-container aspect-16-9">
+                <div class="preview-header">
+                    <div class="view-tabs">
+                        <button class="view-tab active" onclick="switchView('preview')" data-view="preview">Preview</button>
+                        <button class="view-tab" onclick="switchView('html')" data-view="html">HTML</button>
+                        <button class="view-tab" onclick="switchView('css')" data-view="css">CSS</button>
+                        <button class="view-tab" onclick="switchView('js')" data-view="js">JS</button>
+                    </div>
+                    <div class="preview-controls-right">
+                        <button class="reset-btn" onclick="rerunPreview()" title="Reset/Rerun">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                <path d="M21 3v5h-5"/>
+                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                                <path d="M3 21v-5h5"/>
+                            </svg>
+                        </button>
+                        <div class="device-toggles">
+                            <button class="device-btn" onclick="setDevice('mobile')" title="Mobile">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                                </svg>
+                            </button>
+                            <button class="device-btn active" onclick="setDevice('desktop')" title="Desktop">
+                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                    <line x1="8" y1="21" x2="16" y2="21"/>
+                                    <line x1="12" y1="17" x2="12" y2="21"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="preview-content" id="preview-wrapper">
+                    <iframe id="preview-frame"></iframe>
+                    <pre id="code-html" class="code-view"><code class="language-html"></code></pre>
+                    <pre id="code-css" class="code-view"><code class="language-css"></code></pre>
+                    <pre id="code-js" class="code-view"><code class="language-javascript"></code></pre>
+                </div>
+            </div>
+
+            <!-- Console Box -->
+            <div class="console-box" id="console-box" style="display: none;">
+                 <div class="console-header">
+                    <span>Console</span>
+                    <button class="icon-btn-small" onclick="clearConsole()" title="Clear">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div id="console-logs" class="console-logs"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2>Login</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit" class="modal-btn">Login</button>
+            </form>
+            <div class="modal-link">
+                Don't have an account? <a onclick="switchModal('register-modal')">Register</a>
+            </div>
+            <div class="modal-link">
+                 <a onclick="closeModal('login-modal')">Close</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal">
+        <div class="modal-content">
+            <h2>Register</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit" class="modal-btn">Register</button>
+            </form>
+            <div class="modal-link">
+                Already have an account? <a onclick="switchModal('login-modal')">Login</a>
+            </div>
+            <div class="modal-link">
+                 <a onclick="closeModal('register-modal')">Close</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alert-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="alert-title">Alert</h2>
+            <div id="alert-message" style="margin-bottom: 1.5rem; line-height: 1.5; color: var(--fg);"></div>
+            <button class="modal-btn" onclick="closeModal('alert-modal')">OK</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="script.js"></script>
+</body>
+</html>

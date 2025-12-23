@@ -1,0 +1,67 @@
+{
+  "providers": [
+    {
+      "name": "OpenAI",
+      "type": "openai",
+      "baseURL": "https://api.openai.com/v1",
+      "apiKey": "YOUR_OPENAI_API_KEY",
+      "availableModels": [
+        "o3-mini",
+        "o1",
+        "gpt-4.5-preview"
+      ]
+    },
+    {
+      "name": "Ollama",
+      "type": "openai",
+      "baseURL": "http://localhost:11434/v1",
+      "apiKey": "ollama",
+      "availableModels": [
+        "smollm:135m",
+        "llama3.2:1b",
+        "gpt-oss:120b-cloud",
+        "qwen3-coder:480b-cloud",
+        "glm-4.6:cloud",
+        "deepseek-r1:8b",
+        "deepseek-v3.1:671b-cloud",
+        "gemma3:4b-it-qat",
+        "llama3.2:latest",
+        "nomic-embed-text:latest"
+      ]
+    },
+    {
+      "name": "Anthropic",
+      "type": "anthropic",
+      "baseURL": "https://api.anthropic.com/v1",
+      "apiKey": "YOUR_CLAUDE_API_KEY",
+      "availableModels": [
+        "claude-4.5-opus-20251124",
+        "claude-4.5-sonnet-20250929",
+        "claude-4.5-haiku-20251015"
+      ]
+    },
+    {
+      "name": "xAI",
+      "type": "openai",
+      "baseURL": "https://api.grok.ai/v1",
+      "apiKey": "YOUR_GROK_API_KEY",
+      "availableModels": ["grok-4", "grok-4-mini", "grok-3"]
+    },
+    {
+      "name": "Google",
+      "type": "google",
+      "baseURL": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "apiKey": "YOUR_GEMINI_API_KEY",
+      "availableModels": ["gemini-3-pro", "gemini-3-flash", "gemini-2.0-flash"]
+    }
+  ],
+  "promptOverrides": [
+    {
+      "model": "deepseek-r1:8b",
+      "html": "",
+      "system": "You are a specialized UI generation API. Output HTML, CSS, and JS in separate code blocks. HTML must be a full document. NO <style> or <script> tags in HTML. NO local files. NO thinking tags."
+    }
+  ],
+  "systemPrompt": "You are a specialized UI generation API. Your ONLY job is to output the code for the requested UI. \n\nSTRUCTURED RESPONSE FORMAT REQUIRED:\n1. ```html\n   <!DOCTYPE html>\n   <html>\n   <head>\n     <meta charset=\"UTF-8\" />\n     <title>Generated UI</title>\n   </head>\n   <body>\n     <!-- Your HTML Content Here -->\n   </body>\n   </html>\n   ```\n\n2. ```css\n   /* Your CSS Content Here */\n   /* DO NOT WRAP IN <style> TAGS */\n   ```\n\n3. ```js\n   /* Your JavaScript Content Here */\n   /* DO NOT WRAP IN <script> TAGS */\n   ```\n\nSTRICT RULES:\n- HTML: Must be a complete HTML5 document. NO <style> or <script> tags inside HTML. NO local file links (href=\"style.css\", src=\"script.js\"). Use CDNs if absolutely needed.\n- CSS: Only raw CSS code. NO <style> tags.\n- JS: Only raw JS code. NO <script> tags.\n- NO explanations, NO thinking tags, NO markdown text outside code blocks. Just the 3 code blocks."
+}
+
