@@ -612,6 +612,12 @@ iframe#preview-frame {
     border-radius: 12px;
     overflow: hidden;
     height: 200px; /* Fixed height for console seems appropriate, or resizable */
+    transition: opacity 0.3s;
+}
+
+.console-box.disabled {
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 .console-header {

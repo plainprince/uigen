@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Show console box if it has content?
             const consoleBox = document.getElementById('console-box');
             if (consoleBox) {
-                consoleBox.style.display = 'flex';
+                consoleBox.classList.remove('disabled');
             }
         }
     });
@@ -363,6 +363,12 @@ function handleNewProject() {
     els.codeJs.innerHTML = '<code class="language-javascript"></code>';
     els.consoleLogs.innerHTML = '';
     
+    // Disable console
+    const consoleBox = document.getElementById('console-box');
+    if (consoleBox) {
+        consoleBox.classList.add('disabled');
+    }
+    
     // Reset dropdown visibility
     const options = els.modelList.querySelectorAll('.model-option');
     options.forEach(opt => opt.style.display = 'flex');
@@ -465,10 +471,23 @@ async function handleSubmit() {
     // Build conversation history
     conversationHistory.push({ role: 'user', content: prompt });
     
+    // Collect current code for context (for iterations)
+    const currentCodes = {};
+    selectedModels.forEach(m => {
+        if (currentResponseData[m]) {
+            currentCodes[m] = {
+                html: currentResponseData[m].html,
+                css: currentResponseData[m].css,
+                js: currentResponseData[m].js
+            };
+        }
+    });
+
     const requestBody = {
         prompt,
         models: selectedModels,
-        history: conversationHistory
+        history: conversationHistory,
+        currentCodes
     };
     
     const headers = {

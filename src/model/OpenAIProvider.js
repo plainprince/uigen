@@ -8,7 +8,7 @@ export class OpenAIProvider {
             baseURL: config.baseURL,
             apiKey: config.apiKey,
             defaultHeaders: {
-                'HTTP-Referer': 'https://github.com/simeonkummer/UI-effect-gen', // Optional for OpenRouter
+                'HTTP-Referer': 'https://github.com/plainprince/UI-effect-gen', // Optional for OpenRouter
                 'X-Title': 'MultiForge' 
             }
         });

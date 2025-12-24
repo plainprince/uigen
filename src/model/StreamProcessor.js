@@ -1,10 +1,17 @@
+import { CodeBlockParser } from './CodeBlockParser.js';
+
 /**
  * Utility to process streams and remove thinking tags <think>...</think>
+ * Also supports extracting code from codeblocks when extractCodeBlock is true
  */
 export class StreamProcessor {
-    constructor() {
+    constructor(extractCodeBlock = false) {
         this.isThinking = false;
         this.buffer = '';
+        this.extractCodeBlock = extractCodeBlock;
+        this.codeBlockParser = extractCodeBlock ? new CodeBlockParser() : null;
+        this.codeBlockBuffer = '';
+        this.codeBlockComplete = false;
     }
 
     /**
@@ -22,6 +29,21 @@ export class StreamProcessor {
         
         let content = this.buffer + chunk;
         this.buffer = '';
+        
+        // If extracting code blocks, first process through code block parser
+        if (this.extractCodeBlock && this.codeBlockParser) {
+            // Accumulate all content for code block parsing
+            this.codeBlockBuffer += content;
+            const extractedCode = this.codeBlockParser.processChunk(content);
+            if (extractedCode !== null) {
+                // Code block complete, yield the extracted code
+                this.codeBlockComplete = true;
+                yield extractedCode;
+                return;
+            }
+            // Code block not complete yet, don't yield anything
+            return;
+        }
 
         // Simple state machine
         while (content.length > 0) {
@@ -90,6 +112,31 @@ export class StreamProcessor {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Finalize processing - extract any remaining code if stream ends
+     */
+    *finalize() {
+        if (this.extractCodeBlock && this.codeBlockParser) {
+            const finalCode = this.codeBlockParser.finalize();
+            if (finalCode !== null) {
+                yield finalCode;
+            }
+        }
+    }
+
+    /**
+     * Reset processor state
+     */
+    reset() {
+        this.isThinking = false;
+        this.buffer = '';
+        this.codeBlockBuffer = '';
+        this.codeBlockComplete = false;
+        if (this.codeBlockParser) {
+            this.codeBlockParser.reset();
         }
     }
 }

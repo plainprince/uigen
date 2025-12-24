@@ -108,9 +108,10 @@ app.post('/api/save-state', checkAuth, (req, res) => {
 });
 
 app.post('/api/generate', checkAuth, async (req, res) => {
-    const { prompt, models, history } = req.body;
+    const { prompt, models, history, currentCodes } = req.body;
     // models is an array of strings like ["Ollama/llama3.2:latest", "OpenAI/gpt-4o"]
     // history is array of all conversation messages (prompts only, no code)
+    // currentCodes is { modelName: { html, css, js } } for iterations
     
     let messages = history || [];
     if (messages.length === 0) {
@@ -121,7 +122,27 @@ app.post('/api/generate', checkAuth, async (req, res) => {
     // "If a request is made from frontend, it asks you to login... If you tried submitting a prompt but weren't logged in that prompt gets now submitted... The prompt field will be cleared and the prompt will be sent via HTTP")
     // The frontend handles the logic of forcing login. The backend just processes.
     
-    // However, for saving userdata, we might need a user.
+    // Prepare context for each model
+    // Priority: 1. Frontend provided code (currentCodes) 2. DB saved state (last iteration)
+    const contextMap = {};
+    let savedData = null;
+    if (req.user && req.user.userdata_json) {
+        try {
+            savedData = JSON.parse(req.user.userdata_json);
+        } catch(e) {
+            console.error("Failed to parse saved userdata", e);
+        }
+    }
+
+    models.forEach(m => {
+        if (currentCodes && currentCodes[m] && (currentCodes[m].html || currentCodes[m].css || currentCodes[m].js)) {
+             contextMap[m] = currentCodes[m];
+        } else if (savedData && (savedData.html || savedData.css || savedData.js)) {
+             contextMap[m] = savedData;
+        } else {
+             contextMap[m] = null;
+        }
+    });
     
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -130,19 +151,67 @@ app.post('/api/generate', checkAuth, async (req, res) => {
     // Parallel processing for multiple models
     const streams = models.map(async (modelString) => {
         try {
-            const stream = modelManager.streamResponse(modelString, messages);
+            const currentCode = contextMap[modelString];
+            const stream = modelManager.streamResponse(modelString, messages, currentCode);
+            const codeBlockMarkers = {
+                html: '```html\n',
+                css: '```css\n',
+                js: '```js\n'
+            };
+            
+            let currentType = null;
+            let lastContent = '';
             
             for await (const chunk of stream) {
-                // We need to tag which model this chunk belongs to
-                // Format: event: <modelString>\ndata: <json_chunk>\n\n
-                // We'll wrap the chunk in a JSON structure
+                // chunk is now { type: 'html'|'css'|'js', content: string }
+                // chunk.content is the accumulated code for this type
+                
+                if (chunk.type !== currentType) {
+                    // Type changed - close previous codeblock if any
+                    if (currentType !== null) {
+                        const closeMarker = '\n```';
+                        const payload = JSON.stringify({
+                            model: modelString,
+                            content: closeMarker
+                        });
+                        res.write(`data: ${payload}\n\n`);
+                    }
+                    
+                    // Start new codeblock
+                    currentType = chunk.type;
+                    const marker = codeBlockMarkers[chunk.type] || '```\n';
+                    const wrappedContent = marker + chunk.content;
+                    const payload = JSON.stringify({
+                        model: modelString,
+                        content: wrappedContent
+                    });
+                    res.write(`data: ${payload}\n\n`);
+                    lastContent = chunk.content;
+                } else {
+                    // Same type - send only the new content (difference from last)
+                    const newContent = chunk.content.slice(lastContent.length);
+                    if (newContent.length > 0) {
+                        const payload = JSON.stringify({
+                            model: modelString,
+                            content: newContent
+                        });
+                        res.write(`data: ${payload}\n\n`);
+                        lastContent = chunk.content;
+                    }
+                }
+            }
+            
+            // Close last codeblock
+            if (currentType !== null) {
+                const closeMarker = '\n```';
                 const payload = JSON.stringify({
                     model: modelString,
-                    content: chunk
+                    content: closeMarker
                 });
                 res.write(`data: ${payload}\n\n`);
             }
-             res.write(`data: ${JSON.stringify({ model: modelString, done: true })}\n\n`);
+            
+            res.write(`data: ${JSON.stringify({ model: modelString, done: true })}\n\n`);
         } catch (err) {
             console.error(`Error with model ${modelString}:`, err);
             res.write(`data: ${JSON.stringify({ model: modelString, error: err.message })}\n\n`);
